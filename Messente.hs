@@ -96,7 +96,7 @@ listen port fn =
 -- |Verify SMS delivery.
 -- Takes apiUser apiPassword smsId
 verify :: String -> String -> SmsID -> IO Delivery
-verify apiUser apiPassword id = do
+verify apiUser apiPassword id =
   do resp <- doRequest servers ("/get_dlr_response/?" ++ makeQuery q)
      case resp of
        "OK DELIVERED" -> return $ Delivered id
@@ -104,7 +104,7 @@ verify apiUser apiPassword id = do
        "OK FAILED"    -> return $ DeliveryError    id 1 "Unknown"
        "ERROR 102"  -> throw $ InvalidParameters q
        "ERROR 111"  -> throw $ InvalidSender "unknown"
-       "ERROR 109"  -> throw $ MissingPin
+       "ERROR 109"  -> throw   MissingPin
        r            -> throw $ Unknown $ BL.unpack r
   where
     q = [ ("username",    apiUser    )

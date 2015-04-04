@@ -13,7 +13,7 @@ main = do
   listen 9000 delivery
 
 delivery :: Delivery -> IO ()
-delivery del = do
+delivery del =
   case del of
     Delivered id  -> putStrLn $ "delivered: " ++ id
     DeliveryError id errNo errStr -> putStrLn $ "not delivered: " ++ id ++ " (" ++ errStr ++ ")"
