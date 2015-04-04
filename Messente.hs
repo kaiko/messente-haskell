@@ -1,4 +1,32 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
+{-|
+Module      : Messente
+Description : Messente SMS Gateway wrapper library
+License     : MIT
+Maintainer  : kaiko@zazler.com
+
+Example
+
+@
+import Messente
+
+smsSend = send \"api-username\" \"api-password\"
+main = do
+  result <- smsSend Nothing \"+00000000000\" \"my first sms\"
+  putStrLn $ case result of
+    Right id -> \"sms sent, id: \" ++ id
+    Left (errNo, errStr) -> \"not sent: \" ++ show errNo ++ \", \" ++ errStr
+
+  listen 9000 delivery
+
+delivery :: Delivery -> IO ()
+delivery del = putStrLn $
+  case del of
+    Delivered id  -> \"delivered \" ++ id
+    DeliveryError id errNo errStr -> \"not delivered \" ++ id ++ \": \" ++ errStr
+    DeliveryProgress id status    -> \"progress \"      ++ id ++ \": \" ++ status
+@
+-}
 module Messente
   ( Delivery(..)
   , MessenteError(..)
@@ -25,6 +53,7 @@ import Control.Exception
 
 servers = [ "api2.messente.com", "api3.messente.com" ]
 
+-- |Messente SMS textual id 
 type SmsID = String
 
 -- |Exceptions for Messente API
@@ -34,7 +63,7 @@ data MessenteError
   | InvalidParameters [(String, String)]
   | InvalidSender String
   | MissingPin
-  | ServersDown           -- ^ All servers gave "FAILED 209"
+  | ServersDown           -- ^ All servers gave @FAILED 209@
   | Unknown String        -- ^ Just in case. Argument contains http response as it is.
   deriving (Typeable)
 
@@ -48,7 +77,6 @@ instance Show MessenteError where
   show (InvalidSender s    ) = "You must register this sender from Messente API (" ++ s ++ ")"
   show (Unknown       s    ) = "Unknown Messente error: " ++ s
 
--- |All possible delivery states.
 data Delivery
   = Delivered SmsID                 -- ^ Happy final state
   | DeliveryError SmsID Int String  -- ^ Negative final state
@@ -73,6 +101,7 @@ send apiUser apiPassword from to content =
          ] ++ maybe [] (\f -> [("from", f)]) from
 
 -- |Listens delivery reports
+-- Takes port number and callback function as arguments.
 listen :: Int -> (Delivery -> IO ()) -> IO ()
 listen port fn =
   withSocketsDo $
@@ -110,6 +139,8 @@ verify apiUser apiPassword id =
     q = [ ("username",    apiUser    )
         , ("password",    apiPassword)
         , ("sms_uniq_id", id         ) ]
+
+------------
 
 doRequest :: [String] -> String -> IO BL.ByteString
 doRequest [] _ = throw ServersDown
